@@ -13,8 +13,6 @@ config = "0.13.3"
 env_logger = "0.10.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.96"
-actix-cors = "0.6.4"
-postgres = { version = "0.19.0", features = ["with-chrono-0_4", "with-serde_json-1"] }
 tokio-postgres = "0.7.8"
 tokio-pg-mapper = "0.2.0"
 tokio-pg-mapper-derive = "0.2.0"
