@@ -9,6 +9,17 @@ CREATE TABLE IF NOT EXISTS person (
     deleted_at TIMESTAMP
 )
 
+CREATE TABLE IF NOT EXISTS organization (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR NOT NULL,
+    address VARCHAR NOT NULL,
+    phone VARCHAR NOT NULL,
+    ceo_id INTEGER NOT NULL REFERENCES person(id),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMP
+)
+
 -- insert some test data with 5 different people that have different names, jobs other than software engineer, and random favorite numbers
 insert into person (name, job, is_adult, favorite_number) values ('John', 'Software Engineer', true, 1);
 insert into person (name, job, is_adult, favorite_number) values ('Jane', 'Software Engineer', true, 2);
