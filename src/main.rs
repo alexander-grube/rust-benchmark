@@ -34,7 +34,7 @@ mod db {
     use deadpool_postgres::Client;
     use tokio_pg_mapper::FromTokioPostgresRow;
 
-    use crate::models::{Person, NewPerson};
+    use crate::models::{NewPerson, Person};
 
     pub async fn select_all_persons(client: &Client) -> Vec<Person> {
         let _stmt = "SELECT * FROM person ORDER BY ID ASC";
@@ -82,7 +82,15 @@ mod db {
         let stmt = client.prepare(&_stmt).await.unwrap();
 
         return client
-            .query(&stmt, &[&person.name, &person.job, &person.is_adult, &person.favorite_number])
+            .query(
+                &stmt,
+                &[
+                    &person.name,
+                    &person.job,
+                    &person.is_adult,
+                    &person.favorite_number,
+                ],
+            )
             .await
             .unwrap()
             .iter()
@@ -94,7 +102,7 @@ mod db {
 }
 
 mod handlers {
-    use actix_web::{web, Error, HttpResponse, get, post};
+    use actix_web::{get, post, web, Error, HttpResponse};
     use deadpool_postgres::{Client, Pool};
 
     use crate::db;
@@ -110,7 +118,9 @@ mod handlers {
         let json = serde_json::to_string(&goods).unwrap();
         let json_timer_end = std::time::Instant::now();
         println!("Elapsed time JSON: {:?}", json_timer_end - json_timer_start);
-        return Ok(HttpResponse::Ok().append_header(("Content-Type", "application/json")).body(json));
+        return Ok(HttpResponse::Ok()
+            .append_header(("Content-Type", "application/json"))
+            .body(json));
     }
 
     #[get("/person/limit/{limit}")]
@@ -127,7 +137,9 @@ mod handlers {
         let json = serde_json::to_string(&goods).unwrap();
         let json_timer_end = std::time::Instant::now();
         println!("Elapsed time JSON: {:?}", json_timer_end - json_timer_start);
-        return Ok(HttpResponse::Ok().append_header(("Content-Type", "application/json")).body(json));
+        return Ok(HttpResponse::Ok()
+            .append_header(("Content-Type", "application/json"))
+            .body(json));
     }
 
     #[get("/person/{id}")]
@@ -144,7 +156,9 @@ mod handlers {
         let json = serde_json::to_string(&goods).unwrap();
         let json_timer_end = std::time::Instant::now();
         println!("Elapsed time JSON: {:?}", json_timer_end - json_timer_start);
-        return Ok(HttpResponse::Ok().append_header(("Content-Type", "application/json")).body(json));
+        return Ok(HttpResponse::Ok()
+            .append_header(("Content-Type", "application/json"))
+            .body(json));
     }
 
     #[post("/person")]
@@ -161,14 +175,16 @@ mod handlers {
         let json = serde_json::to_string(&goods).unwrap();
         let json_timer_end = std::time::Instant::now();
         println!("Elapsed time JSON: {:?}", json_timer_end - json_timer_start);
-        return Ok(HttpResponse::Ok().append_header(("Content-Type", "application/json")).body(json));
+        return Ok(HttpResponse::Ok()
+            .append_header(("Content-Type", "application/json"))
+            .body(json));
     }
 }
 
 use ::config::Config;
-use actix_web::{web, App, HttpServer, middleware::Logger};
+use actix_web::{middleware::Logger, web, App, HttpServer};
 use dotenv::dotenv;
-use handlers::{get_all_persons, get_person_by_id, post_person, get_persons_limit};
+use handlers::{get_all_persons, get_person_by_id, get_persons_limit, post_person};
 use tokio_postgres::NoTls;
 
 use crate::config::ExampleConfig;
@@ -196,9 +212,53 @@ async fn main() -> std::io::Result<()> {
             .service(get_person_by_id)
             .service(post_person)
     })
-        .bind(config.server_addr.clone())?
-        .run();
+    .bind(config.server_addr.clone())?
+    .run();
     println!("Server running at http://{}/", config.server_addr);
 
     server.await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use actix_web::{http::StatusCode, test, web, App};
+    use serde_json::json;
+
+    #[actix_rt::test]
+    async fn test_post_person() {
+        dotenv().ok();
+        env_logger::init();
+
+        let config_ = Config::builder()
+            .add_source(::config::Environment::default())
+            .build()
+            .unwrap();
+
+        let config: ExampleConfig = config_.try_deserialize().unwrap();
+
+        let pool = config.pg.create_pool(None, NoTls).unwrap();
+        let mut app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(pool.clone()))
+                .service(post_person),
+        )
+        .await;
+
+        let payload = json!({
+            "name": "John",
+            "job": "Programmer",
+            "is_adult": true,
+            "favorite_number": 27
+        });
+
+        let req = test::TestRequest::post()
+            .uri("/person")
+            .set_json(&payload)
+            .to_request();
+
+        let resp = test::call_service(&mut app, req).await;
+
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
 }
