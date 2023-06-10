@@ -61,7 +61,7 @@ mod db {
     use deadpool_postgres::Client;
     use tokio_pg_mapper::FromTokioPostgresRow;
 
-    use crate::models::{NewPerson, Person, Organization, NewOrganization};
+    use crate::models::{NewOrganization, NewPerson, Organization, Person};
 
     pub async fn select_all_persons(client: &Client) -> Vec<Person> {
         let _stmt = "SELECT * FROM person ORDER BY ID ASC";
@@ -118,7 +118,8 @@ mod db {
     }
 
     pub async fn select_ceo_of_organisation(client: &Client, id: i32) -> Person {
-        let _stmt = "SELECT * FROM person WHERE id = (SELECT ceo_id FROM organization WHERE id = $1)";
+        let _stmt =
+            "SELECT * FROM person WHERE id = (SELECT ceo_id FROM organization WHERE id = $1)";
         let stmt = client.prepare(&_stmt).await.unwrap();
 
         return client
@@ -155,7 +156,10 @@ mod db {
             .unwrap();
     }
 
-    pub async fn insert_organization(client: &Client, organization: &NewOrganization) -> Organization {
+    pub async fn insert_organization(
+        client: &Client,
+        organization: &NewOrganization,
+    ) -> Organization {
         let _stmt = "INSERT INTO organization (name, address, phone, ceo_id) VALUES ($1, $2, $3, $4) RETURNING id, name, address, phone, ceo_id";
         let stmt = client.prepare(&_stmt).await.unwrap();
 
@@ -309,7 +313,10 @@ mod handlers {
 use ::config::Config;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use dotenv::dotenv;
-use handlers::{get_all_persons, get_person_by_id, get_persons_limit, post_person, get_all_organizations, post_organization};
+use handlers::{
+    get_all_organizations, get_all_persons, get_person_by_id, get_persons_limit, post_organization,
+    post_person,
+};
 use tokio_postgres::NoTls;
 
 use crate::config::ExampleConfig;
