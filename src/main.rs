@@ -116,15 +116,24 @@ mod db {
     }
 
     pub async fn select_person_by_id(client: &Client, id: i32) -> Person {
-        let _stmt = "SELECT * FROM get_person_by_id($1);";
+        let _stmt = "CALL get_person_by_id($1, $2, $3, $4, $5)";
         let stmt = client.prepare(&_stmt).await.unwrap();
 
         return client
-            .query(&stmt, &[&id])
+            .query(
+                &stmt,
+                &[
+                    &id,
+                    &None::<String>,
+                    &None::<String>,
+                    &None::<bool>,
+                    &None::<i16>,
+                ],
+            )
             .await
             .unwrap()
             .iter()
-            .map(|row| Person::from_row_ref(row).unwrap())
+            .map(|row| Person::from(row))
             .collect::<Vec<Person>>()
             .pop()
             .unwrap();
@@ -147,12 +156,12 @@ mod db {
     }
 
     pub async fn insert_person(client: &Client, person: &NewPerson) -> Person {
-        let _call = "CALL insert_person($1, $2, $3, $4, $5);";
-        let call = client.prepare(&_call).await.unwrap();
+        let _stmt = "CALL insert_person($1, $2, $3, $4, $5)";
+        let stmt = client.prepare(&_stmt).await.unwrap();
 
         return client
             .query(
-                &call,
+                &stmt,
                 &[
                     &person.name,
                     &person.job,
