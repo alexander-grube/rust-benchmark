@@ -10,6 +10,7 @@ mod config {
 mod models {
     use serde::{Deserialize, Serialize};
     use tokio_pg_mapper_derive::PostgresMapper;
+    use tokio_postgres::Row;
 
     #[derive(Debug, Serialize, Deserialize, PostgresMapper)]
     #[pg_mapper(table = "person")]
@@ -19,6 +20,18 @@ mod models {
         pub job: String,
         pub is_adult: bool,
         pub favorite_number: i16,
+    }
+
+    impl From<&Row> for Person {
+        fn from(row: &Row) -> Self {
+            Self {
+                id: row.get("p_id"),
+                name: row.get("p_name"),
+                job: row.get("p_job"),
+                is_adult: row.get("p_is_adult"),
+                favorite_number: row.get("p_favorite_number"),
+            }
+        }
     }
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -103,7 +116,7 @@ mod db {
     }
 
     pub async fn select_person_by_id(client: &Client, id: i32) -> Person {
-        let _stmt = "SELECT * FROM person WHERE id = $1";
+        let _stmt = "SELECT * FROM get_person_by_id($1);";
         let stmt = client.prepare(&_stmt).await.unwrap();
 
         return client
@@ -134,23 +147,24 @@ mod db {
     }
 
     pub async fn insert_person(client: &Client, person: &NewPerson) -> Person {
-        let _stmt = "INSERT INTO person (name, job, is_adult, favorite_number) VALUES ($1, $2, $3, $4) RETURNING id, name, job, is_adult, favorite_number";
-        let stmt = client.prepare(&_stmt).await.unwrap();
+        let _call = "CALL insert_person($1, $2, $3, $4, $5);";
+        let call = client.prepare(&_call).await.unwrap();
 
         return client
             .query(
-                &stmt,
+                &call,
                 &[
                     &person.name,
                     &person.job,
                     &person.is_adult,
                     &person.favorite_number,
+                    &None::<i32>,
                 ],
             )
             .await
             .unwrap()
             .iter()
-            .map(|row| Person::from_row_ref(row).unwrap())
+            .map(|row| Person::from(row))
             .collect::<Vec<Person>>()
             .pop()
             .unwrap();

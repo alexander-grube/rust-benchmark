@@ -9,6 +9,32 @@ CREATE TABLE IF NOT EXISTS person (
     deleted_at TIMESTAMP
 )
 
+CREATE OR REPLACE FUNCTION get_person_by_id(p_id INT)
+RETURNS SETOF person AS
+$$
+BEGIN
+    RETURN QUERY SELECT * FROM person WHERE id = p_id;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE PROCEDURE insert_person(
+    INOUT p_name VARCHAR,
+    INOUT p_job VARCHAR,
+    INOUT p_is_adult BOOLEAN,
+    INOUT p_favorite_number SMALLINT,
+	OUT p_id INT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO person (name, job, is_adult, favorite_number)
+    VALUES (p_name, p_job, p_is_adult, p_favorite_number)
+    RETURNING id, name, job, is_adult, favorite_number
+    INTO p_id, p_name, p_job, p_is_adult, p_favorite_number;
+END;
+$$;
+
 CREATE TABLE IF NOT EXISTS organization (
     id SERIAL PRIMARY KEY,
     name VARCHAR NOT NULL,
