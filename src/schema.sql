@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS person (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMP
-)
+);
 
 CREATE OR REPLACE PROCEDURE get_person_by_id(
     INOUT p_id INT,
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS organization (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     deleted_at TIMESTAMP
-)
+);
 
 -- insert some test data with 5 different people that have different names, jobs other than software engineer, and random favorite numbers
 insert into person (name, job, is_adult, favorite_number) values ('John', 'Software Engineer', true, 1);
