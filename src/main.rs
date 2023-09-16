@@ -35,6 +35,14 @@ mod models {
     }
 
     #[derive(Debug, Serialize, Deserialize)]
+    pub struct PersonDOD {
+        pub names: Vec<String>,
+        pub jobs: Vec<String>,
+        pub is_adults: Vec<bool>,
+        pub favorite_numbers: Vec<i16>,
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct NewPerson {
         pub name: String,
         pub job: String,
@@ -228,6 +236,54 @@ mod handlers {
             .body(json));
     }
 
+    #[get("/oop/person")]
+    pub async fn oop_person_benchmark() -> Result<HttpResponse, Error> {
+        let timer_start = std::time::Instant::now();
+        let mut persons = Vec::<crate::models::Person>::new();
+        for i in 0..100_000_000 {
+            persons.push(crate::models::Person {
+                id: i,
+                name: "John".to_string(),
+                job: "Programmer".to_string(),
+                is_adult: true,
+                favorite_number: 27,
+            });
+        }
+        // increment favorite number
+        for person in &mut persons {
+            person.favorite_number += 1;
+        }
+        let timer_end = std::time::Instant::now();
+        println!("Elapsed time OOP: {:?}", timer_end - timer_start);
+        return Ok(HttpResponse::Ok()
+            .append_header(("Content-Type", "application/json"))
+            .body("OOP benchmark done!"));
+    }
+
+    #[get("/dod/person")]
+    pub async fn dod_person_benchmark() -> Result<HttpResponse, Error> {
+        let timer_start = std::time::Instant::now();
+        let mut names = Vec::<String>::new();
+        let mut jobs = Vec::<String>::new();
+        let mut is_adults = Vec::<bool>::new();
+        let mut favorite_numbers = Vec::<i16>::new();
+        for _i in 0..100_000_000 {
+            names.push("John".to_string());
+            jobs.push("Programmer".to_string());
+            is_adults.push(true);
+            favorite_numbers.push(27);
+        }
+        // increment favorite number
+        for i in 0..100_000_000 {
+            favorite_numbers[i] += 1;
+        }
+        let timer_end = std::time::Instant::now();
+        println!("Elapsed time DOD: {:?}", timer_end - timer_start);
+        return Ok(HttpResponse::Ok()
+            .append_header(("Content-Type", "application/json"))
+            .body("DOD benchmark done!"));    
+    }
+
     #[get("/organization")]
     pub async fn get_all_organizations(db_pool: web::Data<Pool>) -> Result<HttpResponse, Error> {
         let client: Client = db_pool.get().await.unwrap();
@@ -338,7 +394,7 @@ use actix_web::{middleware::Logger, web, App, HttpServer};
 use dotenv::dotenv;
 use handlers::{
     get_all_organizations, get_all_persons, get_person_by_id, get_persons_limit, post_organization,
-    post_person,
+    post_person, dod_person_benchmark, oop_person_benchmark
 };
 use tokio_postgres::NoTls;
 
@@ -368,6 +424,8 @@ async fn main() -> std::io::Result<()> {
             .service(get_person_by_id)
             .service(post_person)
             .service(post_organization)
+            .service(oop_person_benchmark)
+            .service(dod_person_benchmark)
     })
     .bind(config.server_addr.clone())?
     .run();
