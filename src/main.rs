@@ -220,7 +220,7 @@ mod handlers {
 
     use crate::{db, models::OrganizationWithCeo};
 
-    #[get("/person")]
+    #[get("/benchmark/person")]
     pub async fn get_all_persons(db_pool: web::Data<Pool>) -> Result<HttpResponse, Error> {
         let client: Client = db_pool.get().await.unwrap();
         let timer_start = std::time::Instant::now();
@@ -236,7 +236,7 @@ mod handlers {
             .body(json));
     }
 
-    #[get("/oop/person")]
+    #[get("/benchmark/oop/person")]
     pub async fn oop_person_benchmark() -> Result<HttpResponse, Error> {
         let timer_start = std::time::Instant::now();
         let mut persons = Vec::<crate::models::Person>::new();
@@ -260,7 +260,7 @@ mod handlers {
             .body("OOP benchmark done!"));
     }
 
-    #[get("/dod/person")]
+    #[get("/benchmark/dod/person")]
     pub async fn dod_person_benchmark() -> Result<HttpResponse, Error> {
         let timer_start = std::time::Instant::now();
         let mut names = Vec::<String>::new();
@@ -284,7 +284,7 @@ mod handlers {
             .body("DOD benchmark done!"));    
     }
 
-    #[get("/organization")]
+    #[get("/benchmark/organization")]
     pub async fn get_all_organizations(db_pool: web::Data<Pool>) -> Result<HttpResponse, Error> {
         let client: Client = db_pool.get().await.unwrap();
         let timer_start = std::time::Instant::now();
@@ -312,7 +312,7 @@ mod handlers {
             .body(json));
     }
 
-    #[get("/person/limit/{limit}")]
+    #[get("/benchmark/person/limit/{limit}")]
     pub async fn get_persons_limit(
         db_pool: web::Data<Pool>,
         path: web::Path<(i64,)>,
@@ -331,7 +331,7 @@ mod handlers {
             .body(json));
     }
 
-    #[get("/person/{id}")]
+    #[get("/benchmark/person/{id}")]
     pub async fn get_person_by_id(
         db_pool: web::Data<Pool>,
         path: web::Path<(i32,)>,
@@ -350,7 +350,7 @@ mod handlers {
             .body(json));
     }
 
-    #[post("/person")]
+    #[post("/benchmark/person")]
     pub async fn post_person(
         db_pool: web::Data<Pool>,
         json: web::Json<crate::models::NewPerson>,
@@ -369,7 +369,7 @@ mod handlers {
             .body(json));
     }
 
-    #[post("/organization")]
+    #[post("/benchmark/organization")]
     pub async fn post_organization(
         db_pool: web::Data<Pool>,
         json: web::Json<crate::models::NewOrganization>,
