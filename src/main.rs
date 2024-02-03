@@ -11,9 +11,11 @@ mod models {
     use serde::{Deserialize, Serialize};
     use tokio_pg_mapper_derive::PostgresMapper;
     use tokio_postgres::Row;
+    use fury_derive::Fury;
 
-    #[derive(Debug, Serialize, Deserialize, PostgresMapper)]
+    #[derive(Fury, Debug, Serialize, Deserialize, PostgresMapper)]
     #[pg_mapper(table = "person")]
+    #[tag("person")]
     pub struct Person {
         pub id: i32,
         pub name: String,
@@ -217,6 +219,7 @@ mod db {
 mod handlers {
     use actix_web::{get, post, web, Error, HttpResponse};
     use deadpool_postgres::{Client, Pool};
+    use fury::{from_buffer, to_buffer};
 
     use crate::{db, models::OrganizationWithCeo};
 
@@ -331,6 +334,25 @@ mod handlers {
             .body(json));
     }
 
+    #[get("/benchmark/person/fury/limit/{limit}")]
+    pub async fn get_persons_limit_fury(
+        db_pool: web::Data<Pool>,
+        path: web::Path<(i64,)>,
+    ) -> Result<HttpResponse, Error> {
+        let client: Client = db_pool.get().await.unwrap();
+        let timer_start = std::time::Instant::now();
+        let goods = db::select_persons_limit(&client, path.0).await;
+        let timer_end = std::time::Instant::now();
+        println!("Elapsed time DB: {:?}", timer_end - timer_start);
+        let fury_timer_start = std::time::Instant::now();
+        let fury = to_buffer(&goods);
+        let fury_timer_end = std::time::Instant::now();
+        println!("Elapsed time FURY: {:?}", fury_timer_end - fury_timer_start);
+        return Ok(HttpResponse::Ok()
+            .append_header(("Content-Type", "application/octet-stream"))
+            .body(fury));
+    }
+
     #[get("/benchmark/person/{id}")]
     pub async fn get_person_by_id(
         db_pool: web::Data<Pool>,
@@ -394,7 +416,7 @@ use actix_web::{middleware::Logger, web, App, HttpServer};
 use dotenv::dotenv;
 use handlers::{
     get_all_organizations, get_all_persons, get_person_by_id, get_persons_limit, post_organization,
-    post_person, dod_person_benchmark, oop_person_benchmark
+    post_person, dod_person_benchmark, oop_person_benchmark, get_persons_limit_fury,
 };
 use tokio_postgres::NoTls;
 
@@ -421,6 +443,7 @@ async fn main() -> std::io::Result<()> {
             .service(get_all_persons)
             .service(get_all_organizations)
             .service(get_persons_limit)
+            .service(get_persons_limit_fury)
             .service(get_person_by_id)
             .service(post_person)
             .service(post_organization)

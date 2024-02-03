@@ -18,3 +18,7 @@ tokio-pg-mapper = "0.2.0"
 tokio-pg-mapper-derive = "0.2.0"
 deadpool-postgres = { version = "0.10.5", features = ["serde"] }
 actix-rt = "2.8.0"
+fury = { git= "https://github.com/apache/incubator-fury.git", branch = "main" }
+fury-derive = { git= "https://github.com/apache/incubator-fury.git", branch = "main" }
+lazy_static = { version = "1.4.0" }
+quote = "1.0.35"
